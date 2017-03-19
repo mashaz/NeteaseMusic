@@ -19,7 +19,8 @@ import time
 import random
 import json
 import sqlite3
-from selenium import webdriver
+from collections import Counter
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')   # note
@@ -111,7 +112,6 @@ def GetTopLastWk():
 
 
 def GetPlayListDetail(plid):
-    #todo 加歌手list  done.
 
     songList = []
     singerList = []
@@ -120,18 +120,21 @@ def GetPlayListDetail(plid):
     respo = requests.get(url,headers=headers)
     soup = BeautifulSoup(respo.content)
     main = soup.find('ul',{'class':'f-hide'})
+
     for music in main.findAll('a'):
         songList.append(music.text)
         #print music.text
 
     singermain  = soup.find('textarea',{'style':'display:none;'})
     xxx = str(singermain.contents[0]).lstrip("u'").rstrip("'")
-    d = json.loads(xxx)
-    for i in range(0,len(d)):
-        singerList.append(d[i]['artists'][0]['name'])
-        #print d[i]['artists'][0]['name']
-
-    #songAndSinger = dict(zip(songList,singerList))
+    try:
+        d = json.loads(xxx)
+        for i in range(0,len(d)):
+            singerList.append(d[i]['artists'][0]['name'])
+    except:
+        for i in range(0,len(songList)):
+            singerList.append("unknown")
+    
 
     return songList,singerList
   
@@ -157,10 +160,23 @@ def GetAllListId(uid):
     idlist = re.findall(re_id,respo.content)
     #namelist = re.findall(re_name,respo.content)
     for i in range(0,len(idlist)):
-        idlist[i] = idlist[i].lstrip('"id":').rstrip('}')
+        idlist[i] = idlist[i].lstrip('"id":').rstrip('}').rstrip(',')
     idlist = idlist[0:ccount]
     return  idlist   #创建的所有的歌单id列表
-    
+
+def singerAnalysis(singerList,flag):
+
+    word_counts = Counter(singerList)
+    top_three = word_counts.most_common(3)
+    try:
+        x1 = top_three.pop()
+        x2 = top_three.pop()
+        x3 = top_three.pop()
+        print UseStyle('收藏第三多的歌手:%s(%s次)'%(x1[0],x1[1]),fore="white")
+        print UseStyle('收藏第二多的歌手:%s(%s次)'%(x2[0],x2[1]),fore="blue")
+        print UseStyle('收藏最多的歌手:%s(%s次)'%(x3[0],x3[1]),fore="purple")
+    except:
+            print '看来你收藏的不够多哦！'
 
 def compare(ilist_id,ulist_id):
     iLikeSongList,iSingerList = GetPlayListDetail(ilist_id) #playlist id not user id
@@ -170,6 +186,10 @@ def compare(ilist_id,ulist_id):
         iLikeSongList[i] = iLikeSongList[i] + ' - ' + iSingerList[i]
     for i in range(0,len(uLikeSongList)):
         uLikeSongList[i] = uLikeSongList[i] + ' - ' + uSingerList[i]
+    print '你'
+    singerAnalysis(iSingerList,0)
+    print 'Ta'
+    singerAnalysis(uSingerList,0)
     print UseStyle('你喜欢的音乐列表有%d首歌'%(len(iLikeSongList)),fore='cyan') 
     time.sleep(1)
     print UseStyle('Ta喜欢的音乐列表有%d首歌'%(len(uLikeSongList)),fore='cyan') 
@@ -180,7 +200,10 @@ def compare(ilist_id,ulist_id):
             if str(isong) == str(usong):
                 sameSongList.append(isong)
     sameSongList = list(set(sameSongList))
-    print UseStyle('你们有%d首共同喜欢的歌'%(len(sameSongList)),fore='red') 
+    if len(sameSongList) == 0:
+        print UseStyle('Oooops,没有任何交集',fore='red') 
+    else:
+        print UseStyle('你们有%d首共同喜欢的歌'%(len(sameSongList)),fore='red') 
     for song in sameSongList:
         print song
 
@@ -190,15 +213,26 @@ def CompareAll(iplaylist,uplaylist):
     allYouPlayList = []
     allYouSingerList = []
     for playlist in iplaylist:
-        iLikeSongList = GetPlayListDetail(playlist)[0]
+        print playlist
+        iLikeSongList , iSingerList = GetPlayListDetail(playlist)
         time.sleep(1)
         allMyPlayList.extend(iLikeSongList)
+        allMySingerList.extend(iSingerList)
     #print len(allMyPlayList)
     for playlist in uplaylist:
-        uLikeSongList = GetPlayListDetail(playlist)[0]
+        uLikeSongList , uSingerList = GetPlayListDetail(playlist)
         time.sleep(1)
         allYouPlayList.extend(uLikeSongList)
+        allYouSingerList.extend(uSingerList)
 
+    for i in range(0,len(allMyPlayList)):
+        allMyPlayList[i] = allMyPlayList[i] + ' - ' + allMySingerList[i]
+    for i in range(0,len(allYouPlayList)):
+        allYouPlayList[i] = allYouPlayList[i] + ' - ' + allYouSingerList[i]
+    print '你'
+    singerAnalysis(allMySingerList,1)
+    print 'Ta'
+    singerAnalysis(allYouSingerList,1)
     print UseStyle('你的所有音乐列表有%d首歌'%(len(allMyPlayList)),fore='cyan') 
     time.sleep(1)
     print UseStyle('Ta的所有音乐列表有%d首歌'%(len(allYouPlayList)),fore='cyan') 
@@ -209,7 +243,10 @@ def CompareAll(iplaylist,uplaylist):
             if str(isong) == str(usong):
                 sameSongList.append(isong)
     sameSongList = list(set(sameSongList))
-    print UseStyle('你们有%d首共同喜欢的歌'%(len(sameSongList)),fore='red') 
+    if len(sameSongList) == 0:
+        print UseStyle('Oooops,没有任何交集',fore='red') 
+    else:
+        print UseStyle('你们有%d首共同喜欢的歌'%(len(sameSongList)),fore='red') 
     for song in sameSongList:
         print song
 
@@ -220,8 +257,8 @@ def main():
     if not os.path.exists('info.txt'):
         os.system('touch info.txt')
     if len(sys.argv) == 1:#对比我喜欢的
-            ulikedplaylist = GetAllListId('100953635')[0]
             ilikedplaylist = GetAllListId('41977865')[0]
+            ulikedplaylist = GetAllListId('100953635')[0]
             compare(ilikedplaylist,ulikedplaylist)
     else:
         if sys.argv[1].startswith('--'):     
@@ -238,11 +275,25 @@ def main():
         elif sys.argv[1].startswith('-'): 
                 option = sys.argv[1][1:] 
                 if(option == 'a'):#对比所有歌单
-                    uplaylist = GetAllListId('106135912')
-                    iplaylist = GetAllListId('46644064')
+                    iplaylist = GetAllListId('41977865')
+                    uplaylist = GetAllListId('273681273')
                     CompareAll(iplaylist,uplaylist)
-                    
-
+                elif (option == 'i'):
+                    print '你的ID'
+                    myid = raw_input()
+                    print '对方ID'
+                    uid = raw_input()
+                    uplaylist = GetAllListId(myid)
+                    iplaylist = GetAllListId(uid)
+                    compare(iplaylist,uplaylist)
+                elif (option == 'ai' or option == "ia"):
+                    print '你的ID'
+                    myid = raw_input()
+                    print '对方ID'
+                    uid = raw_input()
+                    uplaylist = GetAllListId(myid)
+                    iplaylist = GetAllListId(uid)
+                    CompareAll(iplaylist,uplaylist)
     
     #根据uid递增,查找,sleep,需要时间
     #把简单的数据本地化 防止api次数 先本地化喜欢的歌曲
