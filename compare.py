@@ -155,6 +155,7 @@ def GetAllListId(uid):
     为csrf_token搞了大半天，感谢github上的musicbox项目,上了api,早该直接看api,次数太少被ban
     '''
     respo = requests.get(url)
+    print '获得歌单list,解析中...'
     re_id = re.compile(r'\"id\":[0-9]{6,9}\D')
     #re_name = re.compile(r'\"name\":[a-zA-Z0-9]{1,50}\"')  把歌单名取出来json
     idlist = re.findall(re_id,respo.content)
@@ -162,6 +163,7 @@ def GetAllListId(uid):
     for i in range(0,len(idlist)):
         idlist[i] = idlist[i].lstrip('"id":').rstrip('}').rstrip(',')
     idlist = idlist[0:ccount]
+    print '解析完毕'
     return  idlist   #创建的所有的歌单id列表
 
 def singerAnalysis(singerList,flag):
@@ -212,19 +214,21 @@ def CompareAll(iplaylist,uplaylist):
     allMySingerList = []
     allYouPlayList = []
     allYouSingerList = []
+    print '获得歌单中',
     for playlist in iplaylist:
-        print playlist
+        print '.',
         iLikeSongList , iSingerList = GetPlayListDetail(playlist)
         time.sleep(1)
         allMyPlayList.extend(iLikeSongList)
         allMySingerList.extend(iSingerList)
     #print len(allMyPlayList)
     for playlist in uplaylist:
+        print '.',
         uLikeSongList , uSingerList = GetPlayListDetail(playlist)
         time.sleep(1)
         allYouPlayList.extend(uLikeSongList)
         allYouSingerList.extend(uSingerList)
-
+    print
     for i in range(0,len(allMyPlayList)):
         allMyPlayList[i] = allMyPlayList[i] + ' - ' + allMySingerList[i]
     for i in range(0,len(allYouPlayList)):
@@ -251,8 +255,12 @@ def CompareAll(iplaylist,uplaylist):
         print song
 
 
-def UserSearch():
-    pass
+def UserSearch(username):
+
+    url = 'http://music.163.com/api/search/get?s='+str(username)+'&type=1002&offset=0&limit=60'
+    respo = requests.post(url)
+    return  respo.content
+
 def main():
     if not os.path.exists('info.txt'):
         os.system('touch info.txt')
@@ -279,20 +287,57 @@ def main():
                     uplaylist = GetAllListId('273681273')
                     CompareAll(iplaylist,uplaylist)
                 elif (option == 'i'):
-                    print '你的ID'
-                    myid = raw_input()
-                    print '对方ID'
-                    uid = raw_input()
-                    uplaylist = GetAllListId(myid)
-                    iplaylist = GetAllListId(uid)
+                    print '你的昵称:'
+                    myname = raw_input()
+                    
+                    nameJson = UserSearch(myname)
+                    d = json.loads(nameJson)
+                    myname = d['result']['userprofiles'][0]['nickname']
+                    myid = d['result']['userprofiles'][0]['userId']
+                    print '你的用户名和ID是否为%s,%s:任意键继续,Q退出'%(myname,myid)
+                    wait = raw_input()
+                    if wait=='q' or wait == 'Q' :
+                        exit()
+                    iplaylist = GetAllListId(myid)[0]
+
+                    print '对方昵称:'
+                    uname = raw_input()
+
+                    nameJson = UserSearch(uname)
+                    d = json.loads(nameJson)
+                    uname = d['result']['userprofiles'][0]['nickname']
+                    uid = d['result']['userprofiles'][0]['userId']
+                    print '你的用户名和ID是否为%s,%s:任意键继续,Q退出'%(uname,uid)
+                    wait = raw_input()
+                    if wait=='q' or wait == 'Q' :
+                        exit()
+                    uplaylist = GetAllListId(uid)[0]
                     compare(iplaylist,uplaylist)
                 elif (option == 'ai' or option == "ia"):
-                    print '你的ID'
-                    myid = raw_input()
-                    print '对方ID'
-                    uid = raw_input()
-                    uplaylist = GetAllListId(myid)
-                    iplaylist = GetAllListId(uid)
+                    print '你的昵称:'
+                    myname = raw_input()
+                    nameJson = UserSearch(myname)
+                    d = json.loads(nameJson)
+                    myname = d['result']['userprofiles'][0]['nickname']
+                    myid = d['result']['userprofiles'][0]['userId']
+                    print '你的用户名和ID是否为%s,%s:任意键继续,Q退出'%(myname,myid)
+                    wait = raw_input()
+                    if wait=='q' or wait == 'Q' :
+                        exit()
+                    iplaylist = GetAllListId(myid)
+
+                    print '对方昵称:'
+                    uname = raw_input()
+
+                    nameJson = UserSearch(uname)
+                    d = json.loads(nameJson)
+                    uname = d['result']['userprofiles'][0]['nickname']
+                    uid = d['result']['userprofiles'][0]['userId']
+                    print '你的用户名和ID是否为%s,%s:任意键继续,Q退出'%(uname,uid)
+                    wait = raw_input()
+                    if wait=='q' or wait == 'Q' :
+                        exit()
+                    uplaylist = GetAllListId(uid)
                     CompareAll(iplaylist,uplaylist)
     
     #根据uid递增,查找,sleep,需要时间
