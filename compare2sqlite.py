@@ -84,6 +84,15 @@ def UseStyle(string, mode = '', fore = '', back = ''):
 
     return '%s%s%s' % (style, string, end)
 
+class Users:
+    def __init__(self,name,uid):
+        self.name = name
+        self.uid = uid
+        self.datetime = str(time.strftime('%Y-%m-%d',time.localtime(time.time())))
+
+
+        #self.datetime = 
+
 
 def GetCookies():  
 
@@ -252,6 +261,11 @@ def UserSearch(username):
     return  respo.content  #json
 
 def main():
+    conn = sqlite3.connect('user.db')
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE if not exists users(username text,uid text PRIMARY KEY , addedTime text)")
+    cur.execute("CREATE TABLE if not exists playlist(uid text , playlistId text)")
+    cur.execute("CREATE TABLE if not exists playlistDetail(pid text , song text,singer text)")
 
     if len(sys.argv) == 1:#对比我喜欢的
             ilikedplaylist = GetAllListId('41977865')[0]
@@ -320,7 +334,13 @@ def main():
                     if wait=='q' or wait == 'Q' :
                         exit()
 
+                    people = Users(myname,myid)
+                    cur.execute("INSERT INTO users VALUES ('%s','%s','%s')"%(people.name,people.uid,people.datetime))
+            
+
                     iplaylist = GetAllListId(myid)
+                    for playlist in iplaylist:
+                        cur.execute("INSERT INTO playlist VALUES ('%s','%s')"%(myid,playlist))
 
                     print '对方昵称:'
                     uname = raw_input()
@@ -333,8 +353,16 @@ def main():
                     wait = raw_input()
                     if wait=='q' or wait == 'Q' :
                         exit()
+
+                    people = Users(uname,uid)
+                    cur.execute("INSERT INTO users VALUES ('%s','%s','%s')"%(people.name,people.uid,people.datetime))
+                    
+
                     uplaylist = GetAllListId(uid)
-                
+                    for playlist in uplaylist:
+                        cur.execute("INSERT INTO playlist VALUES ('%s','%s')"%(uid,playlist))
+                    conn.commit()
+                    conn.close()
                     CompareAll(iplaylist,uplaylist)
     
     #根据uid递增,查找,sleep,需要时间
