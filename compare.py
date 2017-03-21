@@ -4,9 +4,8 @@
 __auther__ = 'xiaohuahu94@gmail.com'
 
 '''
-如何获取js实现的内容
-todos:
-抓取用户
+todos
+抓取用户分类存放
 top100比较
 '''
 
@@ -16,15 +15,15 @@ import re
 import os
 import sys
 import time
-import random
 import json
-import sqlite3
 from collections import Counter
 
 
 reload(sys)
 sys.setdefaultencoding('utf-8')   # note
 requests.adapters.DEFAULT_RETRIES = 5 
+global wname
+global tname
 
 STYLE = {
         'fore':
@@ -38,7 +37,6 @@ STYLE = {
             'cyan'     : 36,   #  青蓝色
             'white'    : 37,   #  白色
         },
-
         'back' :
         {   # 背景
             'black'     : 40,  #  黑色
@@ -50,7 +48,6 @@ STYLE = {
             'cyan'      : 46,  #  青蓝色
             'white'     : 47,  #  白色
         },
-
         'mode' :
         {   # 显示模式
             'mormal'    : 0,   #  终端默认设置
@@ -60,7 +57,6 @@ STYLE = {
             'invert'    : 7,   #  反白显示
             'hide'      : 8,   #  不可见
         },
-
         'default' :
         {
             'end' : 0,
@@ -71,19 +67,12 @@ STYLE = {
 def UseStyle(string, mode = '', fore = '', back = ''):
 
     mode  = '%s' % STYLE['mode'][mode] if STYLE['mode'].has_key(mode) else ''
-
     fore  = '%s' % STYLE['fore'][fore] if STYLE['fore'].has_key(fore) else ''
-
     back  = '%s' % STYLE['back'][back] if STYLE['back'].has_key(back) else ''
-
     style = ';'.join([s for s in [mode, fore, back] if s])
-
     style = '\033[%sm' % style if style else ''
-
     end   = '\033[%sm' % STYLE['default']['end'] if style else ''
-
     return '%s%s%s' % (style, string, end)
-
 
 def GetCookies():  
 
@@ -128,9 +117,6 @@ def GetPlayListDetail(plid):
 
     return songList,singerList
   
-
-    #print data.artists
-
 def GetAllListId(uid):
 
     url = 'http://music.163.com/user/home?id='+str(uid)
@@ -142,7 +128,7 @@ def GetAllListId(uid):
     limit=100
     url = 'http://music.163.com/api/user/playlist/?offset={}&limit={}&uid={}'.format(offset,limit,uid)
     '''
-    为csrf_token搞了大半天，感谢github上的musicbox项目,上了api,早该直接看api,次数太少被ban
+    为csrf_token搞了大半天，感谢github上的musicbox项目,上了api,早该直接看api,但api需要设定好间隔不然会被ban
     '''
     respo = requests.get(url)
     print '获得歌单list,解析中...'
@@ -223,9 +209,10 @@ def CompareAll(iplaylist,uplaylist):
         allMyPlayList[i] = allMyPlayList[i] + ' - ' + allMySingerList[i]
     for i in range(0,len(allYouPlayList)):
         allYouPlayList[i] = allYouPlayList[i] + ' - ' + allYouSingerList[i]
-    print '你'
+    global wname,tname
+    print UseStyle(wname,back='blue')
     singerAnalysis(allMySingerList,1)
-    print 'Ta'
+    print UseStyle(tname,back='blue')
     singerAnalysis(allYouSingerList,1)
     print UseStyle('你的所有音乐列表有%d首歌'%(len(allMyPlayList)),fore='cyan') 
     time.sleep(1)
@@ -314,6 +301,8 @@ def main():
                     nameJson = UserSearch(myname)
                     d = json.loads(nameJson)
                     myname = d['result']['userprofiles'][0]['nickname']
+                    global wname
+                    wname = myname
                     myid = d['result']['userprofiles'][0]['userId']
                     print '你的用户名和ID是否为%s,%s:任意键继续,Q退出'%(myname,myid)
                     wait = raw_input()
@@ -328,6 +317,8 @@ def main():
                     nameJson = UserSearch(uname)
                     d = json.loads(nameJson)
                     uname = d['result']['userprofiles'][0]['nickname']
+                    global tname
+                    tname = uname
                     uid = d['result']['userprofiles'][0]['userId']
                     print '你的用户名和ID是否为%s,%s:任意键继续,Q退出'%(uname,uid)
                     wait = raw_input()
@@ -336,12 +327,15 @@ def main():
                     uplaylist = GetAllListId(uid)
                 
                     CompareAll(iplaylist,uplaylist)
-    
+    #todo
     #根据uid递增,查找,sleep,需要时间
     #把简单的数据本地化 防止api次数 先本地化喜欢的歌曲
-    #todo
+    
     
 if __name__ == '__main__':
+    global wname,tname
+    wname="你"
+    tname="TA"
     main()
     #GetPlayListDetail('483486909')
 
