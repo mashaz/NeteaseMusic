@@ -18,3 +18,8 @@
 * bs4
 * selenium
 * gb2260
+
+
+![歌单对比](https://raw.githubusercontent.com/mashaz/NeteaseMusic/master/ScreenShot/Screen%20Shot%202017-03-23%20at%209.33.53%20PM.jpg)
+
+![top100](https://raw.githubusercontent.com/mashaz/NeteaseMusic/master/ScreenShot/Screen%20Shot%202017-03-23%20at%209.35.42%20PM.jpg)
