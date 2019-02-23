@@ -1,12 +1,16 @@
 # NeteaseMusic
 
+# 此项目不再更新, 抱歉
+
 ## 用户歌单碰撞
 
 
 ### 用法
-
+* python compare.pu --help
 * python compare.py #获取单用户听歌top100榜单
-* python compare.py -ai #俩用户歌单对比
+* python compare.py -a #俩用户歌单对比
+* python compare.py -d #用户歌单导出到txt
+
 
 ### 环境
 
